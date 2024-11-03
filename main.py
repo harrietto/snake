@@ -32,7 +32,9 @@ class Snake(pygame.sprite.RenderUpdates):
         self.direction = "right"
         self.next_direction = self.direction
         snake_head = SnakeHead(x, y)
+        self.body = [SnakeSegment(x - 1, y), SnakeSegment(x - 2, y), SnakeSegment(x - 3, y)]
         self.head = snake_head
+        self.add(self.body)
         self.add(snake_head)
 
     # Moving the snake
@@ -55,6 +57,11 @@ class Snake(pygame.sprite.RenderUpdates):
 
         self.direction = self.next_direction
 
+        last_segment = self.body.pop()
+        last_segment.rect.x = self.head.rect.x
+        last_segment.rect.y = self.head.rect.y
+        self.body.insert(0, last_segment)
+
         if self.direction == "up":
             self.head.rect.y -= SQUARE_SIZE
         if self.direction == "down":
@@ -71,7 +78,7 @@ class SnakeHead(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
-        pygame.draw.rect(self.image, "#666b94", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
+        pygame.draw.rect(self.image, "#446b94", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
         self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
 
@@ -94,12 +101,9 @@ pygame.display.set_caption("Snake")
 grid_sprites = pygame.sprite.RenderPlain()
 
 # Add snake
-# snake = pygame.sprite.RenderUpdates()
 x = (GRID_LINES[0] + 1) // 2.5
 y = (GRID_LINES[1] + 1) / 2
-# snake_head = SnakeHead(x, y)
 snake = Snake(x, y)
-# snake.add(snake_head)
 
 # Add vertical lines for grid
 vertical_lines = []
