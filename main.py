@@ -33,6 +33,7 @@ class SnakeHead(pygame.sprite.Sprite):
         super().__init__()
         self.counter = 0
         self.direction = "right"
+        self.next_direction = self.direction
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
         pygame.draw.rect(self.image, "#666b94", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
@@ -43,18 +44,21 @@ class SnakeHead(pygame.sprite.Sprite):
         self.counter += 1
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP and (self.direction == "left" or self.direction == "right"):
-                self.direction = "up"
+                self.next_direction = "up"
             if event.key == pygame.K_DOWN and (self.direction == "left" or self.direction == "right"):
-                self.direction = "down"
+                self.next_direction = "down"
             if event.key == pygame.K_LEFT and (self.direction == "up" or self.direction == "down"):
-                self.direction = "left"
+                self.next_direction = "left"
             if event.key == pygame.K_RIGHT and (self.direction == "up" or self.direction == "down"):
-                self.direction = "right"
+                self.next_direction = "right"
 
-        if self.counter < 20:
+        if self.counter < 15:
             return
         
         self.counter = 0
+
+        self.direction = self.next_direction
+
         if self.direction == "up":
             self.rect.y -= SQUARE_SIZE
         if self.direction == "down":
@@ -104,7 +108,6 @@ grid_sprites.add(horizontal_lines)
 bg_surface = pygame.Surface(SCREEN_DIMENSIONS)
 pygame.draw.rect(bg_surface, "#222421", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
 pygame.draw.rect(bg_surface, "#9cb087", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
-pygame.draw.circle(bg_surface, "#34cc23", (SCREEN_DIMENSIONS[0] / 2, SCREEN_DIMENSIONS[1] / 2), GRID_DIMENSIONS[0] / 2, width = 0)
 screen.blit(bg_surface, (0, 0))
 
 grid_sprites.draw(screen)
