@@ -1,6 +1,7 @@
 import pygame
+import random
 
-GRID_LINES = (15, 15)
+GRID_LINES = (16, 15)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -34,9 +35,15 @@ class Snake(pygame.sprite.RenderUpdates):
         snake_head = SnakeHead(x, y)
         self.body = [SnakeSegment(x - 1, y), SnakeSegment(x - 2, y), SnakeSegment(x - 3, y)]
         self.head = snake_head
+        self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
+        self.grid_filled[int(x)][int(y)] = True
+        self.grid_filled[int(x - 1)][int(y)] = True
+        self.grid_filled[int(x - 2)][int(y)] = True
+        self.grid_filled[int(x - 3)][int(y)] = True
+        print(self.grid_filled)
         self.add(self.body)
         self.add(snake_head)
-
+ 
     # Moving the snake
     def update(self):
         self.counter += 1
@@ -93,6 +100,18 @@ class SnakeSegment(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
 
+class Apple(pygame.sprite.Sprite):
+
+    def __init__(self):
+        super().__init__()
+        # available_squares = [x for x in Snake.grid_filled if x == False]
+        x = random.randint(0, GRID_LINES[0])
+        y = random.randint(0, GRID_LINES[1])
+        self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
+        pygame.draw.rect(self.image, "#c43f3f", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
+
 # Pygame setup
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_DIMENSIONS)
@@ -104,6 +123,11 @@ grid_sprites = pygame.sprite.RenderPlain()
 x = (GRID_LINES[0] + 1) // 2.5
 y = (GRID_LINES[1] + 1) / 2
 snake = Snake(x, y)
+
+# Add apple
+apple_draw = pygame.sprite.RenderPlain()
+apple = Apple()
+apple_draw.add(apple)
 
 # Add vertical lines for grid
 vertical_lines = []
@@ -135,9 +159,11 @@ while running:
             running = False
     
     snake.update()
+    apple.update()
 
     snake.clear(screen, bgd=bg_surface)
     snake.draw(screen, bg_surface)
+    apple_draw.draw(screen, bg_surface)
     grid_sprites.draw(screen)
     pygame.display.update()
 
