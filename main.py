@@ -13,10 +13,10 @@ class Line(pygame.sprite.Sprite):
         super().__init__()
         if direction == "horizontal":
             self.image = pygame.Surface((GRID_DIMENSIONS[0], thickness))
-            pygame.draw.rect(self.image, "#222421", pygame.Rect(0, 0, GRID_DIMENSIONS[0], thickness))
+            pygame.draw.rect(self.image, "#c9c9d1", pygame.Rect(0, 0, GRID_DIMENSIONS[0], thickness))
         elif direction == "vertical":
             self.image = pygame.Surface((thickness, GRID_DIMENSIONS[1]))
-            pygame.draw.rect(self.image, "#222421", pygame.Rect(0, 0, thickness, GRID_DIMENSIONS[1]))
+            pygame.draw.rect(self.image, "#c9c9d1", pygame.Rect(0, 0, thickness, GRID_DIMENSIONS[1]))
         else:
             Exception("YOU CAN'T DO THAT!")
 
@@ -27,6 +27,7 @@ class Line(pygame.sprite.Sprite):
             self.rect.center = (position * SQUARE_SIZE + DIST_TO_GRID[0], SCREEN_DIMENSIONS[1] / 2)
 
 class Snake(pygame.sprite.RenderUpdates):
+
     def __init__(self, x, y):
         super().__init__()
         self.counter = 0
@@ -40,10 +41,9 @@ class Snake(pygame.sprite.RenderUpdates):
         self.grid_filled[int(x - 1)][int(y)] = True
         self.grid_filled[int(x - 2)][int(y)] = True
         self.grid_filled[int(x - 3)][int(y)] = True
-        print(self.grid_filled)
         self.add(self.body)
         self.add(snake_head)
- 
+
     # Moving the snake
     def update(self):
         self.counter += 1
@@ -85,7 +85,7 @@ class SnakeHead(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
-        pygame.draw.rect(self.image, "#446b94", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
+        pygame.draw.rect(self.image, "#525680", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
         self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
 
@@ -96,19 +96,24 @@ class SnakeSegment(pygame.sprite.Sprite):
         super().__init__()
         self.counter = 0
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
-        pygame.draw.rect(self.image, "#446b94", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
+        pygame.draw.rect(self.image, "#525680", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
         self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
 
 class Apple(pygame.sprite.Sprite):
 
-    def __init__(self):
+    def __init__(self, grid_filled):
         super().__init__()
-        # available_squares = [x for x in Snake.grid_filled if x == False]
-        x = random.randint(0, GRID_LINES[0])
-        y = random.randint(0, GRID_LINES[1])
+        available_squares = []
+        for x in range(GRID_LINES[0]):
+           for y in range(GRID_LINES[1]):
+               if grid_filled[x][y] == False:
+                   available_squares.append([x, y])
+        self.apple_location = random.randint(0, len(available_squares))
+        x = available_squares[self.apple_location][0]
+        y = available_squares[self.apple_location][1]
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
-        pygame.draw.rect(self.image, "#c43f3f", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
+        pygame.draw.rect(self.image, "#b53c42", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
         self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
 
@@ -126,7 +131,7 @@ snake = Snake(x, y)
 
 # Add apple
 apple_draw = pygame.sprite.RenderPlain()
-apple = Apple()
+apple = Apple(snake.grid_filled)
 apple_draw.add(apple)
 
 # Add vertical lines for grid
@@ -142,8 +147,8 @@ for i in range(GRID_LINES[1] + 1):
 grid_sprites.add(horizontal_lines)
 
 bg_surface = pygame.Surface(SCREEN_DIMENSIONS)
-pygame.draw.rect(bg_surface, "#222421", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
-pygame.draw.rect(bg_surface, "#9cb087", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
+pygame.draw.rect(bg_surface, "#17181f", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
+pygame.draw.rect(bg_surface, "#9d9fb3", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
 screen.blit(bg_surface, (0, 0))
 
 grid_sprites.draw(screen)
