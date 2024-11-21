@@ -34,7 +34,9 @@ class Snake(pygame.sprite.RenderUpdates):
         self.direction = "right"
         self.next_direction = self.direction
         snake_head = SnakeHead(x, y)
-        self.body = [SnakeSegment(x - 1, y), SnakeSegment(x - 2, y), SnakeSegment(x - 3, y)]
+        segment_count = 7
+        self.body = [SnakeSegment(x - count - 1, y) for count in range(segment_count)]
+        # self.body = [SnakeSegment(x - 1, y), SnakeSegment(x - 2, y), SnakeSegment(x - 3, y), SnakeSegment ]
         self.head = snake_head
         self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
         self.grid_filled[int(x)][int(y)] = True
@@ -108,8 +110,9 @@ class Apple(pygame.sprite.Sprite):
         for x in range(GRID_LINES[0]):
            for y in range(GRID_LINES[1]):
                if grid_filled[x][y] == False:
-                   available_squares.append([x, y])
-        self.apple_location = random.randint(0, len(available_squares))
+                   available_squares.append([x + 1, y + 1])
+        print(available_squares)
+        self.apple_location = random.randint(0, len(available_squares) - 1)
         x = available_squares[self.apple_location][0]
         y = available_squares[self.apple_location][1]
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
