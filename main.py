@@ -1,7 +1,7 @@
 import pygame
 import random
 
-GRID_LINES = (16, 15)
+GRID_LINES = (10, 9)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -28,20 +28,21 @@ class Line(pygame.sprite.Sprite):
 
 class Game(pygame.sprite.RenderUpdates):
 
-    def __init__(self, x, y):
+    def __init__(self, i, j):
         super().__init__()
         self.counter = 0
         self.direction = "right"
         self.next_direction = self.direction
-        snake_head = SnakeHead(x, y)
-        segment_count = 10
-        self.body = [SnakeSegment(x - count - 1, y) for count in range(segment_count)]
+        snake_head = SnakeHead(i, j)
+        segment_count = 2
+        self.body = [SnakeSegment(i - count - 1, j) for count in range(segment_count)]
         self.head = snake_head
         self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
-        self.grid_filled[int(x)][int(y)] = True
-        self.grid_filled[int(x - 1)][int(y)] = True
-        self.grid_filled[int(x - 2)][int(y)] = True
-        self.grid_filled[int(x - 3)][int(y)] = True
+        for i in range(segment_count):
+            self.grid_filled[int(i - i)][int(j)] = True
+        # self.grid_filled[int(x - 1)][int(y)] = True
+        # self.grid_filled[int(x - 2)][int(y)] = True
+        # self.grid_filled[int(x - 3)][int(y)] = True
 
         self.add(self.body)
         self.add(snake_head)
@@ -65,12 +66,14 @@ class Game(pygame.sprite.RenderUpdates):
 
         if self.counter < 12:
             return
-        
+
         self.counter = 0
 
         self.direction = self.next_direction
 
         last_segment = self.body.pop()
+        new_segment_i = last_segment.i()
+        new_segment_j = last_segment.j()
         last_segment.rect.x = self.head.rect.x
         last_segment.rect.y = self.head.rect.y
         self.body.insert(0, last_segment)
@@ -84,37 +87,50 @@ class Game(pygame.sprite.RenderUpdates):
         if self.direction == "right":
             self.head.move_by(1, 0)
 
-        if self.head.grid_x == self.apple.grid_x and self.head.grid_y == self.apple.grid_y:
+        print("head: ", self.head.i, self.head.j)
+        print("apple: ", self.apple.i, self.apple.j)
+
+        if self.head.i == self.apple.i and self.head.j == self.apple.j:
             self.apple.spawn(self.grid_filled)
+            print(new_segment_i, new_segment_j)
+            new_segment = SnakeSegment(new_segment_i, new_segment_j)
+            self.body.append(new_segment)
+            self.add(new_segment)
 
 # Snake definition
 class SnakeHead(pygame.sprite.Sprite):
-    
+
     # Draw the snake
-    def __init__(self, x, y):
+    def __init__(self, i, j):
         super().__init__()
-        self.grid_x = x
-        self.grid_y = y
+        self.i = i
+        self.j = j
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
         pygame.draw.rect(self.image, "#525680", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
-        self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
+        self.rect.center = (i * SQUARE_SIZE + DIST_TO_GRID[0] + SQUARE_SIZE / 2, j * SQUARE_SIZE + DIST_TO_GRID[1] + SQUARE_SIZE / 2)
 
     def move_by(self, i, j):
-        self.grid_x += i
-        self.grid_y += j
-        self.rect.center = (self.grid_x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, self.grid_y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
+        self.i += i
+        self.j += j
+        self.rect.center = (self.i * SQUARE_SIZE + DIST_TO_GRID[0] + SQUARE_SIZE / 2, self.j * SQUARE_SIZE + DIST_TO_GRID[1] + SQUARE_SIZE / 2)
 
 class SnakeSegment(pygame.sprite.Sprite):
-    
+
     # Draw the snake
-    def __init__(self, x, y):
+    def __init__(self, i, j):
         super().__init__()
         self.counter = 0
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
         pygame.draw.rect(self.image, "#525680", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
-        self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
+        self.rect.center = (i * SQUARE_SIZE + DIST_TO_GRID[0] + SQUARE_SIZE / 2, j * SQUARE_SIZE + DIST_TO_GRID[1] + SQUARE_SIZE / 2)
+
+    def i(self):
+        return (self.rect.x - DIST_TO_GRID[0]) / SQUARE_SIZE
+
+    def j(self):
+        return (self.rect.y - DIST_TO_GRID[1]) / SQUARE_SIZE
 
 class Apple(pygame.sprite.Sprite):
 
@@ -124,19 +140,19 @@ class Apple(pygame.sprite.Sprite):
 
     def spawn(self, grid_filled):
         available_squares = []
-        for x in range(GRID_LINES[0]):
-           for y in range(GRID_LINES[1]):
-               if grid_filled[x][y] == False:
-                   available_squares.append([x + 1, y + 1])
+        for i in range(GRID_LINES[0]):
+           for j in range(GRID_LINES[1]):
+               if grid_filled[i][j] == False:
+                   available_squares.append([i, j])
         self.apple_location = random.randint(0, len(available_squares) - 1)
-        x = available_squares[self.apple_location][0]
-        y = available_squares[self.apple_location][1]
-        self.grid_x = x
-        self.grid_y = y
+        i = available_squares[self.apple_location][0]
+        j = available_squares[self.apple_location][1]
+        self.i = i
+        self.j = j
         self.image = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE))
         pygame.draw.rect(self.image, "#b53c42", pygame.Rect(0, 0, SQUARE_SIZE, SQUARE_SIZE))
         self.rect = self.image.get_rect()
-        self.rect.center = (x * SQUARE_SIZE + DIST_TO_GRID[0] - SQUARE_SIZE / 2, y * SQUARE_SIZE + DIST_TO_GRID[1] - SQUARE_SIZE / 2)
+        self.rect.center = (i * SQUARE_SIZE + DIST_TO_GRID[0] + SQUARE_SIZE / 2, j * SQUARE_SIZE + DIST_TO_GRID[1] + SQUARE_SIZE / 2)
 
 # Pygame setup
 pygame.init()
@@ -178,13 +194,11 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
+
     game.update()
-    #apple.update()
 
     game.clear(screen, bgd=bg_surface)
     game.draw(screen, bg_surface)
-    #apple_draw.draw(screen, bg_surface)
     grid_sprites.draw(screen)
     pygame.display.update()
 
