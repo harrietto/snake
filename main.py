@@ -1,7 +1,7 @@
 import pygame
 import random
 
-GRID_LINES = (10, 9)
+GRID_LINES = (12, 11)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -31,18 +31,16 @@ class Game(pygame.sprite.RenderUpdates):
     def __init__(self, i, j):
         super().__init__()
         self.counter = 0
+        self.alive = True
         self.direction = "right"
         self.next_direction = self.direction
         snake_head = SnakeHead(i, j)
-        segment_count = 2
+        segment_count = 3
         self.body = [SnakeSegment(i - count - 1, j) for count in range(segment_count)]
         self.head = snake_head
         self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
         for i in range(segment_count):
             self.grid_filled[int(i - i)][int(j)] = True
-        # self.grid_filled[int(x - 1)][int(y)] = True
-        # self.grid_filled[int(x - 2)][int(y)] = True
-        # self.grid_filled[int(x - 3)][int(y)] = True
 
         self.add(self.body)
         self.add(snake_head)
@@ -54,48 +52,58 @@ class Game(pygame.sprite.RenderUpdates):
     # Moving the snake
     def update(self):
         self.counter += 1
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and (self.direction == "left" or self.direction == "right"):
-                self.next_direction = "up"
-            if event.key == pygame.K_DOWN and (self.direction == "left" or self.direction == "right"):
-                self.next_direction = "down"
-            if event.key == pygame.K_LEFT and (self.direction == "up" or self.direction == "down"):
-                self.next_direction = "left"
-            if event.key == pygame.K_RIGHT and (self.direction == "up" or self.direction == "down"):
-                self.next_direction = "right"
 
-        if self.counter < 12:
-            return
+        if self.alive:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and (self.direction == "left" or self.direction == "right"):
+                    self.next_direction = "up"
+                if event.key == pygame.K_DOWN and (self.direction == "left" or self.direction == "right"):
+                    self.next_direction = "down"
+                if event.key == pygame.K_LEFT and (self.direction == "up" or self.direction == "down"):
+                    self.next_direction = "left"
+                if event.key == pygame.K_RIGHT and (self.direction == "up" or self.direction == "down"):
+                    self.next_direction = "right"
 
-        self.counter = 0
+            if self.counter < 12:
+                return True
 
-        self.direction = self.next_direction
+            self.counter = 0
 
-        last_segment = self.body.pop()
-        new_segment_i = last_segment.i()
-        new_segment_j = last_segment.j()
-        last_segment.rect.x = self.head.rect.x
-        last_segment.rect.y = self.head.rect.y
-        self.body.insert(0, last_segment)
+            if (self.head.i == 0 and self.next_direction == "left" 
+            or self.head.i == GRID_LINES[0] - 1 and self.next_direction == "right" 
+            or self.head.j == 0 and self.next_direction == "up" 
+            or self.head.j == GRID_LINES[1] - 1 and self.next_direction == "down"):
+                self.alive = False
+                return self.alive
 
-        if self.direction == "up":
-            self.head.move_by(0, -1)
-        if self.direction == "down":
-            self.head.move_by(0, 1)
-        if self.direction == "left":
-            self.head.move_by(-1, 0)
-        if self.direction == "right":
-            self.head.move_by(1, 0)
+            self.direction = self.next_direction
 
-        print("head: ", self.head.i, self.head.j)
-        print("apple: ", self.apple.i, self.apple.j)
+            last_segment = self.body.pop()
+            new_segment_i = last_segment.i()
+            new_segment_j = last_segment.j()
+            last_segment.rect.x = self.head.rect.x
+            last_segment.rect.y = self.head.rect.y
+            self.body.insert(0, last_segment)
 
-        if self.head.i == self.apple.i and self.head.j == self.apple.j:
-            self.apple.spawn(self.grid_filled)
-            print(new_segment_i, new_segment_j)
-            new_segment = SnakeSegment(new_segment_i, new_segment_j)
-            self.body.append(new_segment)
-            self.add(new_segment)
+            if self.direction == "up":
+                self.head.move_by(0, -1)
+            if self.direction == "down":
+                self.head.move_by(0, 1)
+            if self.direction == "left":
+                self.head.move_by(-1, 0)
+            if self.direction == "right":
+                self.head.move_by(1, 0)
+
+            self.grid_filled[int(self.head.i)][int(self.head.j)] = True
+            self.grid_filled[int(new_segment_i)][int(new_segment_j)] = False
+
+            if self.head.i == self.apple.i and self.head.j == self.apple.j:
+                self.apple.spawn(self.grid_filled)
+                new_segment = SnakeSegment(new_segment_i, new_segment_j)
+                self.body.append(new_segment)
+                self.add(new_segment)
+        
+        return self.alive
 
 # Snake definition
 class SnakeHead(pygame.sprite.Sprite):
@@ -169,13 +177,13 @@ game = Game(x, y)
 # Add vertical lines for grid
 vertical_lines = []
 for i in range(GRID_LINES[0] + 1):
-    vertical_lines.append(Line(i, SQUARE_SIZE / 8, "vertical"))
+    vertical_lines.append(Line(i, SQUARE_SIZE / 12, "vertical"))
 grid_sprites.add(vertical_lines)
 
 # Add horizontal lines for grid
 horizontal_lines = []
 for i in range(GRID_LINES[1] + 1):
-    horizontal_lines.append(Line(i, SQUARE_SIZE / 8, "horizontal"))
+    horizontal_lines.append(Line(i, SQUARE_SIZE / 12, "horizontal"))
 grid_sprites.add(horizontal_lines)
 
 bg_surface = pygame.Surface(SCREEN_DIMENSIONS)
@@ -195,7 +203,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    game.update()
+    if game.update() == False:
+        print("Game over")
 
     game.clear(screen, bgd=bg_surface)
     game.draw(screen, bg_surface)
