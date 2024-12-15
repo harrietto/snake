@@ -30,28 +30,24 @@ class GameOverScreen(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.image = pygame.image.load("game_over.png").convert_alpha()
-        # self.image.convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.center = (SCREEN_DIMENSIONS[0] / 2, SCREEN_DIMENSIONS[1] / 2)
         self.opacity = 0
-        print("added here")
         self.image.set_alpha(self.opacity)
         self.counter = 0
     
     def update(self):
-        print(self.opacity)
-        if self.counter < 1:
-            self.counter += 0.5
+        if self.counter < 10:
+            self.counter += 1
             return
-        self.counter = 0
     
         if self.opacity < 255:
-            self.opacity += 10
+            self.opacity += 5
         else:
             self.opacity = 255
         self.image.set_alpha(self.opacity)
 
-class Game(pygame.sprite.RenderUpdates):
+class Game(pygame.sprite.LayeredUpdates):
 
     def __init__(self, i, j):
         super().__init__()
@@ -73,6 +69,18 @@ class Game(pygame.sprite.RenderUpdates):
         # Add apple
         self.apple = Apple(self.grid_filled)
         self.add(self.apple)
+        
+        # Add vertical lines for grid
+        vertical_lines = []
+        for i in range(GRID_LINES[0] + 1):
+            vertical_lines.append(Line(i, SQUARE_SIZE / 12, "vertical"))
+        self.add(vertical_lines, layer = 1)
+
+        # Add horizontal lines for grid
+        horizontal_lines = []
+        for i in range(GRID_LINES[1] + 1):
+            horizontal_lines.append(Line(i, SQUARE_SIZE / 12, "horizontal"))
+        self.add(horizontal_lines, layer = 1)
 
     # Moving the snake
     def update(self):
@@ -94,48 +102,51 @@ class Game(pygame.sprite.RenderUpdates):
 
             self.counter = 0
 
-            if (self.head.i == 1 and self.next_direction == "left" 
+            if (self.head.i == 0 and self.next_direction == "left" 
             or self.head.i == GRID_LINES[0] - 1 and self.next_direction == "right" 
-            or self.head.j == 1 and self.next_direction == "up" 
+            or self.head.j == 0 and self.next_direction == "up" 
             or self.head.j == GRID_LINES[1] - 1 and self.next_direction == "down"):
                 self.alive = False
-                print("added")
+                # Move grid to bottom layer
+                grid_sprite_list = self.remove_sprites_of_layer(1)
+                for sprite in grid_sprite_list:
+                    self.add(sprite)
                 self.game_over = GameOverScreen()
                 self.add(self.game_over)
+            else:
 
-            self.direction = self.next_direction
+                self.direction = self.next_direction
 
-            last_segment = self.body.pop()
-            new_segment_i = last_segment.i()
-            new_segment_j = last_segment.j()
-            last_segment.rect.x = self.head.rect.x
-            last_segment.rect.y = self.head.rect.y
-            self.body.insert(0, last_segment)
+                last_segment = self.body.pop()
+                new_segment_i = last_segment.i()
+                new_segment_j = last_segment.j()
+                last_segment.rect.x = self.head.rect.x
+                last_segment.rect.y = self.head.rect.y
+                self.body.insert(0, last_segment)
 
-            if self.direction == "up":
-                self.head.move_by(0, -1)
-            if self.direction == "down":
-                self.head.move_by(0, 1)
-            if self.direction == "left":
-                self.head.move_by(-1, 0)
-            if self.direction == "right":
-                self.head.move_by(1, 0)
+                if self.direction == "up":
+                    self.head.move_by(0, -1)
+                if self.direction == "down":
+                    self.head.move_by(0, 1)
+                if self.direction == "left":
+                    self.head.move_by(-1, 0)
+                if self.direction == "right":
+                    self.head.move_by(1, 0)
 
-            self.grid_filled[int(self.head.i)][int(self.head.j)] = True
-            self.grid_filled[int(new_segment_i)][int(new_segment_j)] = False
+                self.grid_filled[int(self.head.i)][int(self.head.j)] = True
+                self.grid_filled[int(new_segment_i)][int(new_segment_j)] = False
 
-            if self.head.i == self.apple.i and self.head.j == self.apple.j:
-                self.apple.spawn(self.grid_filled)
-                new_segment = SnakeSegment(new_segment_i, new_segment_j)
-                self.body.append(new_segment)
-                self.add(new_segment)
+                if self.head.i == self.apple.i and self.head.j == self.apple.j:
+                    self.apple.spawn(self.grid_filled)
+                    new_segment = SnakeSegment(new_segment_i, new_segment_j)
+                    self.body.append(new_segment)
+                    self.add(new_segment)
         else:
             self.game_over.update()
 
 # Snake definition
 class SnakeHead(pygame.sprite.Sprite):
 
-    # Draw the snake
     def __init__(self, i, j):
         super().__init__()
         self.i = i
@@ -152,7 +163,6 @@ class SnakeHead(pygame.sprite.Sprite):
 
 class SnakeSegment(pygame.sprite.Sprite):
 
-    # Draw the snake
     def __init__(self, i, j):
         super().__init__()
         self.counter = 0
@@ -194,34 +204,18 @@ pygame.init()
 screen = pygame.display.set_mode(SCREEN_DIMENSIONS)
 clock = pygame.time.Clock()
 pygame.display.set_caption("Snake")
-grid_sprites = pygame.sprite.RenderPlain()
-# ui = pygame.sprite.RenderPlain()
 
 # Add snake
 x = (GRID_LINES[0] + 1) // 2.5
 y = (GRID_LINES[1] + 1) / 2
 game = Game(x, y)
 
-# Add vertical lines for grid
-vertical_lines = []
-for i in range(GRID_LINES[0] + 1):
-    vertical_lines.append(Line(i, SQUARE_SIZE / 12, "vertical"))
-grid_sprites.add(vertical_lines)
-
-# Add horizontal lines for grid
-horizontal_lines = []
-for i in range(GRID_LINES[1] + 1):
-    horizontal_lines.append(Line(i, SQUARE_SIZE / 12, "horizontal"))
-grid_sprites.add(horizontal_lines)
 
 bg_surface = pygame.Surface(SCREEN_DIMENSIONS)
-# pygame.draw.rect(bg_surface, "#17181f", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
-pygame.draw.rect(bg_surface, "red", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
-# pygame.draw.rect(bg_surface, "#9d9fb3", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
-pygame.draw.rect(bg_surface, "green", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
-screen.blit(bg_surface, (0, 0))
+pygame.draw.rect(bg_surface, "#17181f", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
+pygame.draw.rect(bg_surface, "#9d9fb3", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
 
-# grid_sprites.draw(screen)
+screen.blit(bg_surface, (0, 0))
 
 running = True
 counter = 0
@@ -233,13 +227,10 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    grid_sprites.draw(screen)
     game.update()
 
     game.clear(screen, bgd=bg_surface)
     game.draw(screen, bg_surface)
-    # ui.update()
-    # ui.draw(screen)
     pygame.display.update()
 
     clock.tick(60)
