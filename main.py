@@ -60,8 +60,8 @@ class Game(pygame.sprite.LayeredUpdates):
         self.body = [SnakeSegment(i - count - 1, j) for count in range(segment_count)]
         self.head = snake_head
         self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
-        for i in range(segment_count):
-            self.grid_filled[int(i - i)][int(j)] = True
+        for c in range(segment_count):
+            self.grid_filled[int(i - c)][int(j)] = True
 
         self.add(self.body)
         self.add(snake_head)
@@ -72,14 +72,14 @@ class Game(pygame.sprite.LayeredUpdates):
         
         # Add vertical lines for grid
         vertical_lines = []
-        for i in range(GRID_LINES[0] + 1):
-            vertical_lines.append(Line(i, SQUARE_SIZE / 12, "vertical"))
+        for c in range(GRID_LINES[0] + 1):
+            vertical_lines.append(Line(c, SQUARE_SIZE / 12, "vertical"))
         self.add(vertical_lines, layer = 1)
 
         # Add horizontal lines for grid
         horizontal_lines = []
-        for i in range(GRID_LINES[1] + 1):
-            horizontal_lines.append(Line(i, SQUARE_SIZE / 12, "horizontal"))
+        for c in range(GRID_LINES[1] + 1):
+            horizontal_lines.append(Line(c, SQUARE_SIZE / 12, "horizontal"))
         self.add(horizontal_lines, layer = 1)
 
     # Moving the snake
