@@ -110,6 +110,23 @@ class Game(pygame.sprite.LayeredUpdates):
                 if event.key == pygame.K_RIGHT and (self.direction == "up" or self.direction == "down") and self.next_direction != "right":
                     self.next_direction = "right"
                     pygame.mixer.Sound.play(self.right_sound)
+            
+            #### AI ####
+
+            # if self.direction == "right" and self.head.i == GRID_LINES[0] - 1 or self.direction == "left" and self.head.j == GRID_LINES[1] - 2:
+            #     self.next_direction = "up"
+            #     pygame.mixer.Sound.play(self.up_sound)
+            # elif self.head.i == 0 and self.head.j == 0 or self.direction == "left" and self.head.j == 0:
+            #     self.next_direction = "down"
+            #     pygame.mixer.Sound.play(self.down_sound)
+            # elif self.head.i == GRID_LINES[0] - 1 and self.head.j == 0 or (self.direction == "down" or self.direction == "up") and self.head.i != 0 and self.head.i != GRID_LINES[0] - 1 and (self.head.j == GRID_LINES[1] - 2 or self.head.j == 0):
+            #     self.next_direction = "left"
+            #     pygame.mixer.Sound.play(self.left_sound)
+            # elif self.head.i == 0 and self.head.j == GRID_LINES[1] - 1:
+            #     self.next_direction = "right"
+            #     pygame.mixer.Sound.play(self.right_sound)
+
+            ############
 
             if self.counter < 12:
                 return
