@@ -1,7 +1,7 @@
 import pygame
 import random
 
-GRID_LINES = (12, 11)
+GRID_LINES = (16, 15)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -37,7 +37,7 @@ class GameOverScreen(pygame.sprite.Sprite):
         self.counter = 0
     
     def update(self):
-        if self.counter < 10:
+        if self.counter < 15:
             self.counter += 1
             return
     
@@ -65,7 +65,7 @@ class Game(pygame.sprite.LayeredUpdates):
 
         self.add(self.body)
         self.add(snake_head)
-
+ 
         # Add apple
         self.apple = Apple(self.grid_filled)
         self.add(self.apple)
@@ -105,7 +105,12 @@ class Game(pygame.sprite.LayeredUpdates):
             if (self.head.i == 0 and self.next_direction == "left" 
             or self.head.i == GRID_LINES[0] - 1 and self.next_direction == "right" 
             or self.head.j == 0 and self.next_direction == "up" 
-            or self.head.j == GRID_LINES[1] - 1 and self.next_direction == "down"):
+            or self.head.j == GRID_LINES[1] - 1 and self.next_direction == "down"
+            or self.head.i != 0 and self.grid_filled[int(self.head.i) - 1][int(self.head.j)] == True and self.next_direction == "left" 
+            or self.head.i != GRID_LINES[0] - 1 and self.grid_filled[int(self.head.i) + 1][int(self.head.j)] == True and self.next_direction == "right" 
+            or self.head.j != 0 and self.grid_filled[int(self.head.i)][int(self.head.j) - 1] == True and self.next_direction == "up" 
+            or self.head.j != GRID_LINES[1] - 1 and self.grid_filled[int(self.head.i)][int(self.head.j) + 1] == True and self.next_direction == "down"):
+
                 self.alive = False
                 # Move grid to bottom layer
                 grid_sprite_list = self.remove_sprites_of_layer(1)
@@ -113,8 +118,8 @@ class Game(pygame.sprite.LayeredUpdates):
                     self.add(sprite)
                 self.game_over = GameOverScreen()
                 self.add(self.game_over)
-            else:
 
+            else:
                 self.direction = self.next_direction
 
                 last_segment = self.body.pop()
@@ -137,10 +142,10 @@ class Game(pygame.sprite.LayeredUpdates):
                 self.grid_filled[int(new_segment_i)][int(new_segment_j)] = False
 
                 if self.head.i == self.apple.i and self.head.j == self.apple.j:
-                    self.apple.spawn(self.grid_filled)
                     new_segment = SnakeSegment(new_segment_i, new_segment_j)
                     self.body.append(new_segment)
                     self.add(new_segment)
+                    self.apple.spawn(self.grid_filled)
         else:
             self.game_over.update()
 
