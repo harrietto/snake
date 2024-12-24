@@ -1,7 +1,7 @@
 import pygame
 import random
 
-GRID_LINES = (16, 15)
+GRID_LINES = (12, 11)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -35,6 +35,8 @@ class GameOverScreen(pygame.sprite.Sprite):
         self.opacity = 0
         self.image.set_alpha(self.opacity)
         self.counter = 0
+        self.game_over_song = pygame.mixer.Sound("game_over.wav")
+        pygame.mixer.Sound.play(self.game_over_song)
     
     def update(self):
         if self.counter < 15:
@@ -69,7 +71,15 @@ class Game(pygame.sprite.LayeredUpdates):
         # Add apple
         self.apple = Apple(self.grid_filled)
         self.add(self.apple)
-        
+
+        # Add sounds
+        self.eating_sound = pygame.mixer.Sound("apple_eating.wav")
+        self.up_sound = pygame.mixer.Sound("up.wav")
+        self.right_sound = pygame.mixer.Sound("right.wav")
+        self.left_sound = pygame.mixer.Sound("left.wav")
+        self.down_sound = pygame.mixer.Sound("down.wav")
+        self.collision_sound = pygame.mixer.Sound("collision.wav")
+
         # Add vertical lines for grid
         vertical_lines = []
         for c in range(GRID_LINES[0] + 1):
@@ -88,14 +98,18 @@ class Game(pygame.sprite.LayeredUpdates):
 
         if self.alive:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP and (self.direction == "left" or self.direction == "right"):
+                if event.key == pygame.K_UP and (self.direction == "left" or self.direction == "right") and self.next_direction != "up":
                     self.next_direction = "up"
-                if event.key == pygame.K_DOWN and (self.direction == "left" or self.direction == "right"):
+                    pygame.mixer.Sound.play(self.up_sound)
+                if event.key == pygame.K_DOWN and (self.direction == "left" or self.direction == "right") and self.next_direction != "down":
                     self.next_direction = "down"
-                if event.key == pygame.K_LEFT and (self.direction == "up" or self.direction == "down"):
+                    pygame.mixer.Sound.play(self.down_sound)
+                if event.key == pygame.K_LEFT and (self.direction == "up" or self.direction == "down") and self.next_direction != "left":
                     self.next_direction = "left"
-                if event.key == pygame.K_RIGHT and (self.direction == "up" or self.direction == "down"):
+                    pygame.mixer.Sound.play(self.left_sound)
+                if event.key == pygame.K_RIGHT and (self.direction == "up" or self.direction == "down") and self.next_direction != "right":
                     self.next_direction = "right"
+                    pygame.mixer.Sound.play(self.right_sound)
 
             if self.counter < 12:
                 return
@@ -111,6 +125,7 @@ class Game(pygame.sprite.LayeredUpdates):
             or self.head.j != 0 and self.grid_filled[int(self.head.i)][int(self.head.j) - 1] == True and self.next_direction == "up" 
             or self.head.j != GRID_LINES[1] - 1 and self.grid_filled[int(self.head.i)][int(self.head.j) + 1] == True and self.next_direction == "down"):
 
+                pygame.mixer.Sound.play(self.collision_sound)
                 self.alive = False
                 # Move grid to bottom layer
                 grid_sprite_list = self.remove_sprites_of_layer(1)
@@ -142,6 +157,7 @@ class Game(pygame.sprite.LayeredUpdates):
                 self.grid_filled[int(new_segment_i)][int(new_segment_j)] = False
 
                 if self.head.i == self.apple.i and self.head.j == self.apple.j:
+                    pygame.mixer.Sound.play(self.eating_sound)
                     new_segment = SnakeSegment(new_segment_i, new_segment_j)
                     self.body.append(new_segment)
                     self.add(new_segment)
