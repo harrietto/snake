@@ -1,7 +1,7 @@
 import pygame
 import random
 
-GRID_LINES = (12, 11)
+GRID_LINES = (8, 7)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -47,7 +47,42 @@ class GameOverScreen(pygame.sprite.Sprite):
             self.opacity += 5
         else:
             self.opacity = 255
+
         self.image.set_alpha(self.opacity)
+
+class YouWinScreen(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("you_win.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.center = (SCREEN_DIMENSIONS[0] / 2, SCREEN_DIMENSIONS[1] / 2)
+        self.opacity = 0
+        self.image.set_alpha(self.opacity)
+        self.counter = 0
+        self.you_win_song = pygame.mixer.Sound("you_win.wav")
+        pygame.mixer.Sound.play(self.you_win_song)
+    
+    def update(self):
+        self.counter += 1
+        if self.counter < 15:
+            return
+    
+        if self.opacity < 255:
+            self.opacity += 5
+        else:
+            self.opacity = 255
+        self.image.set_alpha(self.opacity)
+
+        if self.counter % 5 == 0:
+            pixels = pygame.PixelArray(self.image)
+            for x in range(800, 1100):
+                for y in range(500, 600):
+                    rgb = self.image.unmap_rgb(pixels[x][y])
+                    color = pygame.Color(*rgb)
+                    h, s, l, a = color.hsla
+                    color.hsla = (int(h) + 10) % 360, int(s), int(l), int(a)
+                    pixels[x][y] = color   
+        
 
 class Game(pygame.sprite.LayeredUpdates):
 
@@ -58,7 +93,7 @@ class Game(pygame.sprite.LayeredUpdates):
         self.direction = "right"
         self.next_direction = self.direction
         snake_head = SnakeHead(i, j)
-        segment_count = 3
+        segment_count = 1
         self.body = [SnakeSegment(i - count - 1, j) for count in range(segment_count)]
         self.head = snake_head
         self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
@@ -115,20 +150,16 @@ class Game(pygame.sprite.LayeredUpdates):
 
             # if self.direction == "right" and self.head.i == GRID_LINES[0] - 1 or self.direction == "left" and self.head.j == GRID_LINES[1] - 2:
             #     self.next_direction = "up"
-            #     pygame.mixer.Sound.play(self.up_sound)
             # elif self.head.i == 0 and self.head.j == 0 or self.direction == "left" and self.head.j == 0:
             #     self.next_direction = "down"
-            #     pygame.mixer.Sound.play(self.down_sound)
             # elif self.head.i == GRID_LINES[0] - 1 and self.head.j == 0 or (self.direction == "down" or self.direction == "up") and self.head.i != 0 and self.head.i != GRID_LINES[0] - 1 and (self.head.j == GRID_LINES[1] - 2 or self.head.j == 0):
             #     self.next_direction = "left"
-            #     pygame.mixer.Sound.play(self.left_sound)
             # elif self.head.i == 0 and self.head.j == GRID_LINES[1] - 1:
             #     self.next_direction = "right"
-            #     pygame.mixer.Sound.play(self.right_sound)
 
             ############
 
-            if self.counter < 12:
+            if self.counter < 14:
                 return
 
             self.counter = 0
@@ -144,12 +175,24 @@ class Game(pygame.sprite.LayeredUpdates):
 
                 pygame.mixer.Sound.play(self.collision_sound)
                 self.alive = False
+
                 # Move grid to bottom layer
                 grid_sprite_list = self.remove_sprites_of_layer(1)
                 for sprite in grid_sprite_list:
                     self.add(sprite)
-                self.game_over = GameOverScreen()
-                self.add(self.game_over)
+
+                filled_count = 0
+                for col in self.grid_filled:
+                    for cell in col:
+                        filled_count += cell
+                
+                if filled_count == GRID_LINES[0] * GRID_LINES[1] - 1:
+                    print("You win!")
+                    self.game_over = YouWinScreen()
+                    self.add(self.game_over)
+                else:
+                    self.game_over = GameOverScreen()
+                    self.add(self.game_over)
 
             else:
                 self.direction = self.next_direction
