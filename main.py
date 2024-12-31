@@ -1,7 +1,7 @@
 import pygame
 import random
 
-GRID_LINES = (8, 7)
+GRID_LINES = (12, 11)
 SQUARE_SIZE = 30
 GRID_DIMENSIONS = (GRID_LINES[0] * SQUARE_SIZE, GRID_LINES[1] * SQUARE_SIZE)
 SCREEN_DIMENSIONS = (GRID_DIMENSIONS[0] + 800, GRID_DIMENSIONS[1] + 400)
@@ -26,8 +26,18 @@ class Line(pygame.sprite.Sprite):
         elif direction == "vertical":
             self.rect.center = (position * SQUARE_SIZE + DIST_TO_GRID[0], SCREEN_DIMENSIONS[1] / 2)
 
-class GameOverScreen(pygame.sprite.Sprite):
+class PressSpace(pygame.sprite.Sprite):
     def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("press_space.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.center = (SCREEN_DIMENSIONS[0] / 2, SCREEN_DIMENSIONS[1] - DIST_TO_GRID[1] + 50)
+        self.space_pressed_sound = pygame.mixer.Sound("space_pressed.wav")
+    def set_opacity(self, opacity):
+        self.image.set_alpha(opacity)
+
+class GameOverScreen(pygame.sprite.Sprite):
+    def __init__(self, press_space):
         super().__init__()
         self.image = pygame.image.load("game_over.png").convert_alpha()
         self.rect = self.image.get_rect()
@@ -37,7 +47,8 @@ class GameOverScreen(pygame.sprite.Sprite):
         self.counter = 0
         self.game_over_song = pygame.mixer.Sound("game_over.wav")
         pygame.mixer.Sound.play(self.game_over_song)
-    
+        self.press_space = press_space
+
     def update(self):
         if self.counter < 15:
             self.counter += 1
@@ -49,6 +60,7 @@ class GameOverScreen(pygame.sprite.Sprite):
             self.opacity = 255
 
         self.image.set_alpha(self.opacity)
+        self.press_space.image.set_alpha(self.opacity)
 
 class YouWinScreen(pygame.sprite.Sprite):
     def __init__(self):
@@ -82,18 +94,17 @@ class YouWinScreen(pygame.sprite.Sprite):
                     h, s, l, a = color.hsla
                     color.hsla = (int(h) + 10) % 360, int(s), int(l), int(a)
                     pixels[x][y] = color   
-        
 
 class Game(pygame.sprite.LayeredUpdates):
 
     def __init__(self, i, j):
         super().__init__()
         self.counter = 0
-        self.alive = True
+        self.state = "waiting"
         self.direction = "right"
         self.next_direction = self.direction
         snake_head = SnakeHead(i, j)
-        segment_count = 1
+        segment_count = 3
         self.body = [SnakeSegment(i - count - 1, j) for count in range(segment_count)]
         self.head = snake_head
         self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
@@ -106,6 +117,10 @@ class Game(pygame.sprite.LayeredUpdates):
         # Add apple
         self.apple = Apple(self.grid_filled)
         self.add(self.apple)
+
+        self.press_space = PressSpace()
+        self.press_space.set_opacity(255)
+        self.add(self.press_space)
 
         # Add sounds
         self.eating_sound = pygame.mixer.Sound("apple_eating.wav")
@@ -131,7 +146,7 @@ class Game(pygame.sprite.LayeredUpdates):
     def update(self):
         self.counter += 1
 
-        if self.alive:
+        if self.state == "playing":
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP and (self.direction == "left" or self.direction == "right") and self.next_direction != "up":
                     self.next_direction = "up"
@@ -159,7 +174,7 @@ class Game(pygame.sprite.LayeredUpdates):
 
             ############
 
-            if self.counter < 14:
+            if self.counter < 12:
                 return
 
             self.counter = 0
@@ -174,7 +189,7 @@ class Game(pygame.sprite.LayeredUpdates):
             or self.head.j != GRID_LINES[1] - 1 and self.grid_filled[int(self.head.i)][int(self.head.j) + 1] == True and self.next_direction == "down"):
 
                 pygame.mixer.Sound.play(self.collision_sound)
-                self.alive = False
+                self.state = "game_over"
 
                 # Move grid to bottom layer
                 grid_sprite_list = self.remove_sprites_of_layer(1)
@@ -187,12 +202,13 @@ class Game(pygame.sprite.LayeredUpdates):
                         filled_count += cell
                 
                 if filled_count == GRID_LINES[0] * GRID_LINES[1] - 1:
-                    print("You win!")
                     self.game_over = YouWinScreen()
                     self.add(self.game_over)
                 else:
-                    self.game_over = GameOverScreen()
+                    self.game_over = GameOverScreen(self.press_space)
                     self.add(self.game_over)
+                    self.press_space.set_opacity(0)
+                    self.add(self.press_space)
 
             else:
                 self.direction = self.next_direction
@@ -222,7 +238,14 @@ class Game(pygame.sprite.LayeredUpdates):
                     self.body.append(new_segment)
                     self.add(new_segment)
                     self.apple.spawn(self.grid_filled)
-        else:
+
+        elif self.state == "waiting":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    self.state = "playing"
+                    self.press_space.kill()
+
+        elif self.state == "game_over":
             self.game_over.update()
 
 # Snake definition
@@ -291,29 +314,26 @@ x = (GRID_LINES[0] + 1) // 2.5
 y = (GRID_LINES[1] + 1) / 2
 game = Game(x, y)
 
-
 bg_surface = pygame.Surface(SCREEN_DIMENSIONS)
 pygame.draw.rect(bg_surface, "#17181f", pygame.Rect(0, 0, SCREEN_DIMENSIONS[0], SCREEN_DIMENSIONS[1]))
 pygame.draw.rect(bg_surface, "#9d9fb3", pygame.Rect(DIST_TO_GRID[0], DIST_TO_GRID[1], GRID_DIMENSIONS[0], GRID_DIMENSIONS[1]))
 
 screen.blit(bg_surface, (0, 0))
 
-running = True
-counter = 0
+# running = True
+# counter = 0
 
-while running:
-    counter += 1
+while True:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            pygame.quit()
+        elif event.type == pygame.KEYDOWN:
+            game.update()
 
     game.update()
-
     game.clear(screen, bgd=bg_surface)
     game.draw(screen, bg_surface)
+    
     pygame.display.update()
-
     clock.tick(60)
-
-pygame.quit()
