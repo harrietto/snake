@@ -63,7 +63,7 @@ class GameOverScreen(pygame.sprite.Sprite):
         self.press_space.image.set_alpha(self.opacity)
 
 class YouWinScreen(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, press_space):
         super().__init__()
         self.image = pygame.image.load("you_win.png").convert_alpha()
         self.rect = self.image.get_rect()
@@ -73,6 +73,7 @@ class YouWinScreen(pygame.sprite.Sprite):
         self.counter = 0
         self.you_win_song = pygame.mixer.Sound("you_win.wav")
         pygame.mixer.Sound.play(self.you_win_song)
+        self.press_space = press_space
     
     def update(self):
         self.counter += 1
@@ -83,7 +84,9 @@ class YouWinScreen(pygame.sprite.Sprite):
             self.opacity += 5
         else:
             self.opacity = 255
+
         self.image.set_alpha(self.opacity)
+        self.press_space.image.set_alpha(self.opacity)
 
         if self.counter % 5 == 0:
             pixels = pygame.PixelArray(self.image)
@@ -208,8 +211,10 @@ class Game(pygame.sprite.LayeredUpdates):
                         filled_count += cell
                 
                 if filled_count == GRID_LINES[0] * GRID_LINES[1] - 1:
-                    self.game_over = YouWinScreen()
+                    self.game_over = YouWinScreen(self.press_space)
                     self.add(self.game_over)
+                    self.press_space.set_opacity(0)
+                    self.add(self.press_space)
                 else:
                     self.game_over = GameOverScreen(self.press_space)
                     self.add(self.game_over)
