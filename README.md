@@ -11,4 +11,4 @@ Controls:
 
 Note:
 
-If you would like to see what happens when you beat the game (i.e. by the snake filling the whole grid) then you can go into the code and remove the commented out area titled as "AI". To make it beat the game faster, you can change values such as the grid size and counter speed. (IMPORTANT: If you change the grid size to be very small, you must make sure the segment count is not too long that the snake will spawn out of the grid. This would break the game.)
+If you would like to see what happens when you beat the game (i.e. by the snake filling the whole grid) then you can go into the code and remove the commented out area titled as "AI". To make it beat the game faster, you can increase the clock tick speed at the very bottom of the code.
