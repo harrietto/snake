@@ -32,7 +32,7 @@ class PressSpace(pygame.sprite.Sprite):
         self.image = pygame.image.load("press_space.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.center = (SCREEN_DIMENSIONS[0] / 2, SCREEN_DIMENSIONS[1] - DIST_TO_GRID[1] + 50)
-        self.space_pressed_sound = pygame.mixer.Sound("space_pressed.wav")
+
     def set_opacity(self, opacity):
         self.image.set_alpha(opacity)
 
@@ -99,25 +99,10 @@ class Game(pygame.sprite.LayeredUpdates):
 
     def __init__(self, i, j):
         super().__init__()
-        self.counter = 0
+        self.snake_start_i = i
+        self.snake_start_j = j
+
         self.state = "waiting"
-        self.direction = "right"
-        self.next_direction = self.direction
-        snake_head = SnakeHead(i, j)
-        segment_count = 3
-        self.body = [SnakeSegment(i - count - 1, j) for count in range(segment_count)]
-        self.head = snake_head
-        self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
-        for c in range(segment_count):
-            self.grid_filled[int(i - c)][int(j)] = True
-
-        self.add(self.body)
-        self.add(snake_head)
- 
-        # Add apple
-        self.apple = Apple(self.grid_filled)
-        self.add(self.apple)
-
         self.press_space = PressSpace()
         self.press_space.set_opacity(255)
         self.add(self.press_space)
@@ -129,6 +114,27 @@ class Game(pygame.sprite.LayeredUpdates):
         self.left_sound = pygame.mixer.Sound("left.wav")
         self.down_sound = pygame.mixer.Sound("down.wav")
         self.collision_sound = pygame.mixer.Sound("collision.wav")
+
+        self.new_game_setup()
+
+    def new_game_setup(self):
+        self.counter = 0
+        self.direction = "right"
+        self.next_direction = self.direction
+        snake_head = SnakeHead(self.snake_start_i, self.snake_start_j)
+        segment_count = 3
+        self.body = [SnakeSegment(self.snake_start_i - count - 1, self.snake_start_j) for count in range(segment_count)]
+        self.head = snake_head
+        self.grid_filled = [[False for _ in range(GRID_LINES[1])] for _ in range(GRID_LINES[0])]
+        for c in range(segment_count):
+            self.grid_filled[int(self.snake_start_i - c)][int(self.snake_start_j)] = True
+
+        self.add(self.body)
+        self.add(snake_head)
+ 
+        # Add apple
+        self.apple = Apple(self.grid_filled)
+        self.add(self.apple)
 
         # Add vertical lines for grid
         vertical_lines = []
@@ -244,8 +250,16 @@ class Game(pygame.sprite.LayeredUpdates):
                 if event.key == pygame.K_SPACE:
                     self.state = "playing"
                     self.press_space.kill()
+                    pygame.mixer.Sound.play(self.right_sound)
 
         elif self.state == "game_over":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    self.state = "playing"
+                    self.remove_sprites_of_layer(0)
+                    self.remove_sprites_of_layer(1)
+                    pygame.mixer.Sound.play(self.right_sound)
+                    self.new_game_setup()
             self.game_over.update()
 
 # Snake definition
